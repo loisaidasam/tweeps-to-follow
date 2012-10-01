@@ -55,8 +55,13 @@ class TwitterLib(object):
 				self._check_and_reset_rate_limits()
 				time.sleep(10)
 		
-		result = self._api_request(url, params)
-		self.requests_left -= 1
+		try:
+			result = self._api_request(url, params)
+		except:
+			raise
+		finally:
+			# Always decrement this counter (there's ALWAYS money in the banana stand!)
+			self.requests_left -= 1
 		
 		return result
 	
