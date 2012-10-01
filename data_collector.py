@@ -36,7 +36,7 @@ class DataCollector(object):
 			last_updated = row['followers_history_dates'][-1]
 			staleness = datetime.datetime.utcnow() - last_updated
 			if staleness.total_seconds() < STALE_AGE:
-				logger.info("Skipping user %s - last updated %s (not stale enough yet)" % (id, staleness))
+				logger.info("Skipping user %s - last updated %s ago (not stale enough yet)" % (id, staleness))
 				return row['followers']
 		
 		# Make the actual API request
