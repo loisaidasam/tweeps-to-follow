@@ -35,7 +35,7 @@ class DataCollector(object):
 		if row:
 			last_updated = row['followers_history_dates'][-1]
 			if (datetime.datetime.utcnow() - last_updated).total_seconds() < STALE_AGE:
-				return row
+				return row['followers']
 		
 		# Make the actual API request
 		followers = self.tl.get_followers(user_id=id)
