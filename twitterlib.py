@@ -36,7 +36,7 @@ class TwitterLib(object):
 	
 	def _rate_limited_api_request(self, url, params):
 		# Timeout if we're at our max requests limit for the hour
-		if self.requests > self.TOTAL_REQUESTS_PER_PERIOD:
+		if self.requests >= self.TOTAL_REQUESTS_PER_PERIOD:
 			'''TODO: Figure this out, for some reason it's off. For now just sleeping for 60 mins
 			rate_limit_ish = self.rate_limit_status()
 			reset_time = rate_limit_ish['reset_time_in_seconds']
