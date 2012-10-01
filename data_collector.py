@@ -17,7 +17,7 @@ MAX_DEPTH_LEVEL = 1
 
 # How old of a record is considered "stale" 
 # (duplicate API requests found more recently than this length of time ago are skipped)
-STALE_AGE = 0 #60 * 60
+STALE_AGE = 60 * 60
 
 logger = settings.get_logger(__name__)
 
