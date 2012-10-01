@@ -22,13 +22,16 @@ class TwitterLibException(Exception):
 class TwitterLib(object):
 	# Default for unauth'd req's
 	# TODO: auth'd requests
-	TOTAL_REQUESTS_PER_PERIOD = 150
+	total_requests_per_hour = 150
 	
 	def __init__(self):
+		self._check_and_reset_rate_limits()
+	
+	def _check_and_reset_rate_limits(self):	
 		rate_limit_ish = self.rate_limit_status()
-		self.TOTAL_REQUESTS_PER_PERIOD = rate_limit_ish['hourly_limit']
-		self.requests = rate_limit_ish['hourly_limit'] - rate_limit_ish['remaining_hits']
-		logger.debug("%s remaining requests this hour - next reset time is %s" % (rate_limit_ish['remaining_hits'], rate_limit_ish['reset_time']))
+		self.total_requests_per_hour = rate_limit_ish['hourly_limit']
+		self.requests_left = rate_limit_ish['remaining_hits']
+		logger.debug("%s remaining requests this hour - next reset time is %s" % (self.requests_left, rate_limit_ish['reset_time']))
 	
 	def _api_request(self, url, params):
 		url = '%s/%s?%s' % (BASE_URL, url, urllib.urlencode(params))
@@ -37,20 +40,23 @@ class TwitterLib(object):
 		return json.loads(f.read())
 	
 	def _rate_limited_api_request(self, url, params):
+		logger.debug("%s/%s requests left" % (self.requests_left, self.total_requests_per_hour))
 		# Timeout if we're at our max requests limit for the hour
-		if self.requests >= self.TOTAL_REQUESTS_PER_PERIOD:
+		if self.requests_left <= 0:
 			# Found this here: http://stackoverflow.com/questions/1595047/convert-to-utc-timestamp
 			rate_limit_ish = self.rate_limit_status()
 			reset_time = rate_limit_ish['reset_time_in_seconds']
 			time_now = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
 			sleeptime = reset_time - time_now + 60
-			logger.info("Hit %s requests. Sleeping for %s seconds..." % (self.requests, sleeptime))
+			logger.info("%s requests left. Sleeping for %s seconds..." % (self.requests_left, sleeptime))
 			time.sleep(sleeptime)
 			logger.info("And we're back!")
-			self.__init__()
+			while self.requests_left <= 0:
+				self._check_and_reset_rate_limits()
+				time.sleep(10)
 		
 		result = self._api_request(url, params)
-		self.requests += 1
+		self.requests_left -= 1
 		
 		return result
 	
@@ -93,7 +99,7 @@ class TwitterLib(object):
 			except urllib2.HTTPError, e:
 				# Bad request, try again
 				if e.code == 400:
-					logger.warning("Bad request: %s" % e)
+					logger.warning("Bad request, maybe over limit per hour? %s" % e)
 					pass
 				# Unauthorized - ok for now?
 				elif e.code == 401:
