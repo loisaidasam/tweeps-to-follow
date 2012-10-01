@@ -42,7 +42,7 @@ class TwitterLib(object):
 			rate_limit_ish = self.rate_limit_status()
 			reset_time = rate_limit_ish['reset_time_in_seconds']
 			time_now = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
-			sleeptime = reset_time - time_now + 5
+			sleeptime = reset_time - time_now + 60
 			logger.info("Hit %s requests. Sleeping for %s seconds..." % (self.requests, sleeptime))
 			time.sleep(sleeptime)
 			logger.info("And we're back!")
