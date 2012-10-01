@@ -34,7 +34,9 @@ class DataCollector(object):
 		row = self.fm.get(id)
 		if row:
 			last_updated = row['followers_history_dates'][-1]
-			if (datetime.datetime.utcnow() - last_updated).total_seconds() < STALE_AGE:
+			staleness = datetime.datetime.utcnow() - last_updated
+			if staleness.total_seconds() < STALE_AGE:
+				logger.info("Skipping user %s - last updated %s (not stale enough yet)" % (id, staleness))
 				return row['followers']
 		
 		# Make the actual API request
