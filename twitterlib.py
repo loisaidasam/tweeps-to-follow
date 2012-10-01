@@ -1,4 +1,5 @@
 
+import calendar
 import datetime
 import json
 import logging
@@ -37,13 +38,11 @@ class TwitterLib(object):
 	def _rate_limited_api_request(self, url, params):
 		# Timeout if we're at our max requests limit for the hour
 		if self.requests >= self.TOTAL_REQUESTS_PER_PERIOD:
-			'''TODO: Figure this out, for some reason it's off. For now just sleeping for 60 mins
+			# Found this here: http://stackoverflow.com/questions/1595047/convert-to-utc-timestamp
 			rate_limit_ish = self.rate_limit_status()
 			reset_time = rate_limit_ish['reset_time_in_seconds']
-			time_now = time.mktime(datetime.datetime.utcnow().timetuple())
-			sleeptime = reset_time - time_now
-			'''
-			sleeptime = 3605
+			time_now = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
+			sleeptime = reset_time - time_now + 5
 			logger.info("Hit %s requests. Sleeping for %s seconds..." % (self.requests, sleeptime))
 			time.sleep(sleeptime)
 			logger.info("And we're back!")
