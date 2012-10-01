@@ -11,6 +11,7 @@ import settings
 
 
 BASE_URL = 'http://api.twitter.com/1'
+NUM_RETRIES = 3
 
 logger = settings.get_logger(__name__)
 
@@ -83,14 +84,25 @@ class TwitterLib(object):
 		elif screen_name:
 			params['screen_name'] = screen_name
 		
-		try:
-			result = self._rate_limited_api_request('followers/ids.json', params)
-		except urllib2.HTTPError, e:
-			# Unauthorized - ok for now?
-			if e.code == 401:
-				logger.warning("Request is unauthorized: %s" % e)
-				return []
-			else:
-				raise
+		retries = 0
+		e = None
+		while retries < NUM_RETRIES:
+			try:
+				result = self._rate_limited_api_request('followers/ids.json', params)
+				return result['ids']
+			except urllib2.HTTPError, e:
+				# Bad request, try again
+				if e.code == 400:
+					logger.warning("Bad request: %s" % e)
+					pass
+				# Unauthorized - ok for now?
+				elif e.code == 401:
+					logger.warning("Request is unauthorized: %s" % e)
+					return []
+				else:
+					raise
+			retries += 1
 		
-		return result['ids']
+		if e is not None:
+			raise e
+		return []
