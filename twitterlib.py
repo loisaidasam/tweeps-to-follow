@@ -1,16 +1,16 @@
 
 import calendar
 import datetime
-import json
 import logging
+from optparse import OptionParser
+from pprint import pprint
 import time
-import urllib
-import urllib2
+
+from twython import Twython
 
 import settings
 
 
-BASE_URL = 'http://api.twitter.com/1'
 NUM_RETRIES = 3
 
 logger = settings.get_logger(__name__)
@@ -25,26 +25,27 @@ class TwitterLib(object):
 	total_requests_per_hour = 150
 	
 	def __init__(self):
+		self._setup_twython()
 		self._check_and_reset_rate_limits()
+		
+	def _setup_twython(self):
+		self.client = Twython(app_key=settings.TWITTER_CONSUMER_KEY,
+            app_secret=settings.TWITTER_CONSUMER_SECRET,
+            oauth_token=settings.TWITTER_OAUTH_TOKEN,
+            oauth_token_secret=settings.TWITTER_OAUTH_TOKEN_SECRET)
 	
 	def _check_and_reset_rate_limits(self):	
-		rate_limit_ish = self.rate_limit_status()
+		rate_limit_ish = self.client.getRateLimitStatus()
 		self.total_requests_per_hour = rate_limit_ish['hourly_limit']
 		self.requests_left = rate_limit_ish['remaining_hits']
 		logger.debug("%s remaining requests this hour - next reset time is %s" % (self.requests_left, rate_limit_ish['reset_time']))
 	
-	def _api_request(self, url, params):
-		url = '%s/%s?%s' % (BASE_URL, url, urllib.urlencode(params))
-		logger.debug("Making a GET request to %s" % url)
-		f = urllib2.urlopen(url)
-		return json.loads(f.read())
-	
-	def _rate_limited_api_request(self, url, params):
+	def _rate_limited_api_request(self, twitter_func, *args, **kwargs):
 		logger.debug("%s/%s requests left" % (self.requests_left, self.total_requests_per_hour))
 		# Timeout if we're at our max requests limit for the hour
 		if self.requests_left <= 0:
 			# Found this here: http://stackoverflow.com/questions/1595047/convert-to-utc-timestamp
-			rate_limit_ish = self.rate_limit_status()
+			rate_limit_ish = self.client.getRateLimitStatus()
 			reset_time = rate_limit_ish['reset_time_in_seconds']
 			time_now = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
 			sleeptime = reset_time - time_now + 60
@@ -56,7 +57,7 @@ class TwitterLib(object):
 				time.sleep(10)
 		
 		try:
-			result = self._api_request(url, params)
+			result = twitter_func(*args, **kwargs)
 		except:
 			raise
 		finally:
@@ -67,7 +68,7 @@ class TwitterLib(object):
 	
 	
 	def rate_limit_status(self):
-		return self._api_request('account/rate_limit_status.json', [])
+		return self.client.getRateLimitStatus()
 		
 	
 	def show_user(self, user_id=None, screen_name=None):
@@ -80,8 +81,13 @@ class TwitterLib(object):
 		elif screen_name:
 			params['screen_name'] = screen_name
 		
-		return self._rate_limited_api_request('users/show.json', params)
+		return self._rate_limited_api_request(self.client.showUser, **params)
 	
+	
+	def get_user_info(self, user_ids):
+		user_ids_str = ",".join(map(str, user_ids))
+		return self._rate_limited_api_request(self.client.lookupUser, user_id=user_ids_str)
+		
 	
 	def get_followers(self, user_id=None, screen_name=None):
 		if (user_id is None and screen_name is None) or (user_id is not None and screen_name is not None):
@@ -99,21 +105,47 @@ class TwitterLib(object):
 		e = None
 		while retries < NUM_RETRIES:
 			try:
-				result = self._rate_limited_api_request('followers/ids.json', params)
+				result = self._rate_limited_api_request(self.client.getFollowersIDs, **params)
 				return result['ids']
-			except urllib2.HTTPError, e:
-				# Bad request, try again
-				if e.code == 400:
-					logger.warning("Bad request, maybe over limit per hour? %s" % e)
-					pass
-				# Unauthorized - ok for now?
-				elif e.code == 401:
-					logger.warning("Request is unauthorized: %s" % e)
-					return []
-				else:
-					raise
+			except Exception, e:
+				logger.error("Exception in get_followers on try #%s: %s" % (retries, e))
+				raise
 			retries += 1
 		
 		if e is not None:
 			raise e
 		return []
+
+
+def main():
+	parser = OptionParser()
+	parser.add_option("-t",
+		"--twitter-name", 
+		dest="twittername",
+		default=None,
+		help="Do a lookup of a user's Twitter info"
+	)
+	parser.add_option("-r",
+		"--rate-limit-status",
+		action="store_true", 
+		dest="ratelimitstatus",
+		default=False,
+		help="Do a lookup of rate limiting info"
+	)
+	options, args = parser.parse_args()
+	
+	if options.twittername:
+		tl = TwitterLib()
+		pprint(tl.show_user(screen_name=options.twittername))
+		return
+	
+	if options.ratelimitstatus:
+		tl = TwitterLib()
+		pprint(tl.rate_limit_status())
+		return
+
+	parser.print_help()
+	
+
+if __name__ == "__main__":
+	main()

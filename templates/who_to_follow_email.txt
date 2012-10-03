@@ -1,0 +1,16 @@
+Happy {{ day_of_week }}!
+
+Here are some tweeps that @{{ twitter_user_name }} should follow:
+
+{% for tweep in tweeps %}
+#{{ loop.counter }}. {{ tweep.name }} / @{{ tweep.screen_name }}
+http://www.twitter.com/{{ tweep.screen_name }}
+Tweep Score: {{ tweep.tweep_score }} 
+Following: {{ tweep.friends_count }}
+Followers: {{ tweep.followers_count }}
+Location: {{ tweep.location }}
+{{ tweep.description }}
+
+{% endfor %}
+
+Have a good day!

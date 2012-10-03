@@ -1,2 +1,9 @@
 
+# Database
 pymongo
+
+# Twitter
+twython
+
+# Templating
+jinja2

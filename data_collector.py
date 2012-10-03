@@ -1,13 +1,12 @@
 
 import datetime
 import logging
+from optparse import OptionParser
 import time
 
 from models import FollowerModel
-from optparse import OptionParser
-
-from twitterlib import TwitterLib
 import settings
+from twitterlib import TwitterLib
 
 
 # 0 is people who already follow you (root)
@@ -31,7 +30,7 @@ class DataCollector(object):
 	
 	def _get_followers_helper(self, id, level):
 		# Skip requests that have been made too recently
-		row = self.fm.get(id)
+		row = self.fm.fetch_one(id)
 		if row:
 			last_updated = row['followers_history_dates'][-1]
 			staleness = datetime.datetime.utcnow() - last_updated
@@ -79,19 +78,6 @@ class DataCollector(object):
 
 def do_args():
 	parser = OptionParser()
-	parser.add_option("-t",
-		"--twitter-name", 
-		dest="twittername",
-		default=None,
-		help="Do a lookup of a user's Twitter info"
-	)
-	parser.add_option("-r",
-		"--rate-limit-status",
-		action="store_true", 
-		dest="ratelimitstatus",
-		default=False,
-		help="Do a lookup of rate limiting info"
-	)
 	parser.add_option(
 		"-d", 
 		"--debug",
@@ -104,20 +90,9 @@ def do_args():
 
 
 def main():
-	options, args = do_args()
-	if options.twittername:
-		tl = TwitterLib()
-		from pprint import pprint
-		pprint(tl.show_user(options.twittername))
-		return
-	
-	if options.ratelimitstatus:
-		tl = TwitterLib()
-		from pprint import pprint
-		pprint(tl.rate_limit_status())
-		return
-	
 	dc = DataCollector(settings.TWITTER_ID)
+	
+	options, args = do_args()
 	if options.debug_mode:
 		return dc.collect_data_once()
 	dc.collect_data_forever()

@@ -7,5 +7,8 @@ class Model(object):
 		self.model.insert(data)
 		return data
 	
-	def get(self, criteria):
+	def fetch_one(self, criteria):
 		return self.model.find_one(criteria)
+
+	def fetch_all(self):
+		return self.model.find()
