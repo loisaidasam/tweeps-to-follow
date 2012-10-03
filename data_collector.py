@@ -12,7 +12,7 @@ from twitterlib import TwitterLib
 # 0 is people who already follow you (root)
 # 1 is people that follow them
 # and so on...
-MAX_DEPTH_LEVEL = 1
+MAX_DEPTH_LEVEL = 2
 
 # How old of a record is considered "stale" 
 # (duplicate API requests found more recently than this length of time ago are skipped)
