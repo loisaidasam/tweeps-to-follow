@@ -4,6 +4,7 @@ import operator
 
 from jinja2 import Template
 
+from data_collector import DataCollector
 from emaillib import send_email
 from models import FollowerModel
 import settings
@@ -27,7 +28,12 @@ class DataAnalyzer(object):
 	def analyze_data(self):
 		logger.info("Analyzing tweeps...")
 		
-		# First find all my followers...
+		# TODO: First find all the people I follow already
+	        #dc = DataCollector(settings.TWITTER_ID)
+		#dc.get_followers_helper(dc.user_id, 0, skip_new=False)
+
+		# Now grab people who are already following me 
+		# (so as not to recommend that I follow them)
 		my_followers = []
 		all_tweeps = self.fm.fetch_all()
 		for tweep in all_tweeps:

@@ -28,15 +28,16 @@ class DataCollector(object):
 		self.fm = FollowerModel()
 		self.tl = TwitterLib()
 	
-	def _get_followers_helper(self, id, level):
+	def get_followers_helper(self, id, level, skip_new=True):
 		# Skip requests that have been made too recently
-		row = self.fm.fetch_one(id)
-		if row:
-			last_updated = row['followers_history_dates'][-1]
-			staleness = datetime.datetime.utcnow() - last_updated
-			if staleness.total_seconds() < STALE_AGE:
-				logger.info("Skipping user %s - last updated %s ago (not stale enough yet)" % (id, staleness))
-				return row['followers']
+		if skip_new:
+			row = self.fm.fetch_one(id)
+			if row:
+				last_updated = row['followers_history_dates'][-1]
+				staleness = datetime.datetime.utcnow() - last_updated
+				if staleness.total_seconds() < STALE_AGE:
+					logger.info("Skipping user %s - last updated %s ago (not stale enough yet)" % (id, staleness))
+					return row['followers']
 		
 		# Make the actual API request
 		followers = self.tl.get_followers(user_id=id)
@@ -54,14 +55,14 @@ class DataCollector(object):
 		logger.info("Updating %s followers at level %s..." % (len(followers), level))
 		next_level_followers = set()
 		for id in followers:
-			their_followers = self._get_followers_helper(id, level)
+			their_followers = self.get_followers_helper(id, level)
 			next_level_followers |= set(their_followers)
 		logger.info("Finished updating all followers at level %s" % level)
 		self._update_follower_tree(level+1, list(next_level_followers))
 		
 	
 	def _update_followers(self):
-		followers = self._get_followers_helper(self.user_id, 0)
+		followers = self.get_followers_helper(self.user_id, 0)
 		self._update_follower_tree(1, followers)
 	
 	def _main_loop(self):
