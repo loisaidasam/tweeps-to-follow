@@ -21,3 +21,11 @@ def send_email(from_addr, to_addr, subject, msg_txt, msg_html=None):
 	s = smtplib.SMTP('localhost')
 	s.sendmail(from_addr, to_addr, msg.as_string())
 	s.quit()
+
+
+def main():
+	send_email('sam.sandberg@gmail.com', 'sam.sandberg@gmail.com', 'foo on my barz', 'yeah i sasid it')
+
+if __name__ == "__main__":
+	main()
+

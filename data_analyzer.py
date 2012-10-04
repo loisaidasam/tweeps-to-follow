@@ -38,14 +38,15 @@ class DataAnalyzer(object):
 		tweep_scores = {}
 		all_tweeps = self.fm.fetch_all()
 		for tweep in all_tweeps:
-			if tweep['level'] == 0 or tweep['id'] in my_followers:
-				continue
-			if tweep['id'] not in tweep_scores:
-				tweep_scores[tweep['id']] = 0
-			tweep_scores[tweep['id']] += pow(DEPRECIATION_PER_LEVEL, tweep['level']-1)
+			for follower_id in tweep['followers']:
+				if follower_id in my_followers:
+					continue
+				if follower_id not in tweep_scores:
+					tweep_scores[follower_id] = 0
+				tweep_scores[follower_id] += pow(DEPRECIATION_PER_LEVEL, tweep['level']-1)
 		
 		logger.info("Finished analyzing tweeps, now sorting them...")
-		sorted_tweeps = sorted(tweep_scores.iteritems(), key=operator.itemgetter(1))
+		sorted_tweeps = sorted(tweep_scores.iteritems(), key=operator.itemgetter(1), reverse=True)
 		
 		self.recommended_tweeps = []
 		tweep_ids = [x[0] for x in sorted_tweeps[:NUM_OF_RECOMMENDED_TWEEPS]]
