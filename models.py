@@ -1,6 +1,7 @@
 
 import datetime
 import sys
+import time
 
 from pymongo import Connection
 
@@ -33,22 +34,28 @@ class TweepModel(Model):
 		return super(TweepModel, self).fetch_one({"id": id})
 
 
-	def save_tweep(self, id, level, followers, following, timestamp=None):
+	def save_tweep(self, id, level, followers, followers_count, following_count, timestamp=None):
 		row = self.fetch_one(id) or {}
 		row['id'] = id
 		row['level'] = min(row.get('level', sys.maxint), level)
 		
 		if timestamp is None:
 			timestamp = datetime.datetime.utcnow()
+		timestamp = str(int(time.mktime(timestamp.timetuple())))
 		
 		row['followers'] = followers
 		if 'followers_history' not in row:
 			row['followers_history'] = {}
 		row['followers_history'][timestamp] = followers
 		
-		row['following'] = following
-		if 'following_history' not in row:
-			row['following_history'] = {}
-		row['following_history'][timestamp] = following
+		row['followers_count'] = followers_count
+		if 'followers_count_history' not in row:
+			row['followers_count_history'] = {}
+		row['followers_count_history'][timestamp] = followers_count
+		
+		row['following_count'] = following_count
+		if 'following_count_history' not in row:
+			row['following_count_history'] = {}
+		row['following_count_history'][timestamp] = following_count
 		
 		return self.create_or_update(**row)

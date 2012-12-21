@@ -90,6 +90,7 @@ class TwitterLib(object):
 	
 	
 	def _get_friends_or_followers_helper(self, method, user_id=None, screen_name=None):
+		params = {}
 		if user_id:
 			params['user_id'] = user_id
 		elif screen_name:
@@ -98,7 +99,7 @@ class TwitterLib(object):
 			raise TwitterLibException("Pass either a user_id OR a screen_name dep!")
 		
 		# TODO: use cursor, via https://dev.twitter.com/docs/misc/cursoring
-		params = {'cursor': -1}
+		params['cursor'] = -1
 		
 		retries = 0
 		e = None
@@ -107,8 +108,7 @@ class TwitterLib(object):
 				result = self._rate_limited_api_request(method, **params)
 				return result['ids']
 			except Exception, e:
-				logger.error("Exception in get_followers on try #%s: %s" % (retries, e))
-				raise
+				logger.warning("Exception in get_followers on try #%s: %s" % (retries, e))
 			retries += 1
 		
 		if e is not None:

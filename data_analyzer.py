@@ -46,8 +46,8 @@ class DataAnalyzer(object):
 			# Get a ratio to be applied later
 			if tweep['id'] not in tweep_data:
 				tweep_data[tweep['id']] = {
-					'followers': tweep['followers'],
-					'following': tweep['following'],
+					'followers_count': tweep['followers_count'],
+					'following_count': tweep['following_count'],
 				}
 		
 		logger.info("Applying some heuristics...")
@@ -56,14 +56,27 @@ class DataAnalyzer(object):
 		# 	1. followers/following ratio
 		# 	2. total people following
 		for id, score in tweep_scores.iteritems():
+			data = tweep_data[id]
+			
+			logger.debug("OriginalScore=%s" % score)
 			# TODO: is this right?
-			penalize_effect_1 = 1.0 * tweep_data['followers'] / tweep_data['following']
+			penalize_effect_1 = 1.0 * data['following_count'] / data['followers_count']
 			tweep_scores[id] *= penalize_effect_1
+			logger.debug("Following=%s Followers=%s PenalizeEffect1=%s NewScore=%s" % (
+				data['following_count'],
+				data['followers_count'],
+				penalize_effect_1,
+				tweep_scores[id],
+			))
 			
 			# TODO: is this right?
-			if tweep_data['following'] >= 10:
-				penalize_effect_2 = math.log(tweep_data['following'], 10)
+			if data['following_count'] >= 10:
+				penalize_effect_2 = math.log(data['following_count'], 10)
 				tweep_scores[id] /= penalize_effect_2
+				logger.debug("PenalizeEffect2=%s NewScore=%s" % (
+					penalize_effect_2,
+					tweep_scores[id],
+				))
 		
 		logger.info("Sorting...")
 		sorted_tweeps = sorted(tweep_scores.iteritems(), key=operator.itemgetter(1))

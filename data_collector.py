@@ -35,7 +35,8 @@ class DataCollector(object):
 		# Skip requests that have been made too recently
 		row = self.tm.fetch_one(id)
 		if row:
-			last_updated = row['followers_history_dates'][-1]
+			last_updated_stamp = int(row['followers_history'].keys()[-1])
+			last_updated = datetime.datetime.fromtimestamp(last_updated_stamp)
 			staleness = datetime.datetime.utcnow() - last_updated
 			if staleness.total_seconds() < STALE_AGE:
 				logger.info("Skipping user %s - last updated %s ago (not stale enough yet)" % (id, staleness))
@@ -44,11 +45,12 @@ class DataCollector(object):
 		# Make the actual API requests
 		followers = self.tl.get_followers(user_id=id)
 		
-		# TODO: we don't actually want the people we're following, just the count! use tl.get_user_info()
-		following = self.tl.get_following(user_id=id)
+		user_data = self.tl.get_user_info([id])[0]
+		followers_count = user_data['followers_count']
+		following_count = user_data['friends_count']
 		
 		# Save the data
-		data = self.tm.save_tweep(id, level, followers, following)
+		data = self.tm.save_tweep(id, level, followers, followers_count, following_count)
 		return data['followers']
 		
 	
@@ -60,8 +62,12 @@ class DataCollector(object):
 		logger.info("Updating %s followers at level %s..." % (len(followers), level))
 		next_level_followers = set()
 		for id in followers:
-			their_followers = self._get_followers_helper(id, level)
-			next_level_followers |= set(their_followers)
+			try:
+				their_followers = self._get_followers_helper(id, level)
+				next_level_followers |= set(their_followers)
+			except Exception, e:
+				logger.warning("Exception caught trying to get followers for %s - gave up: %s" % (id, e))
+				pass
 		logger.info("Finished updating all followers at level %s" % level)
 		self._update_follower_tree(level+1, list(next_level_followers))
 	
