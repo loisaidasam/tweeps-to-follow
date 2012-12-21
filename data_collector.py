@@ -31,16 +31,17 @@ class DataCollector(object):
 		self.tl = TwitterLib()
 	
 	
-	def _get_followers_helper(self, id, level):
+	def _get_followers_helper(self, id, level, skip_new=True):
 		# Skip requests that have been made too recently
-		row = self.tm.fetch_one(id)
-		if row:
-			last_updated_stamp = int(row['followers_history'].keys()[-1])
-			last_updated = datetime.datetime.fromtimestamp(last_updated_stamp)
-			staleness = datetime.datetime.utcnow() - last_updated
-			if staleness.total_seconds() < STALE_AGE:
-				logger.info("Skipping user %s - last updated %s ago (not stale enough yet)" % (id, staleness))
-				return row['followers']
+		if skip_new:
+			row = self.tm.fetch_one(id)
+			if row:
+				last_updated_stamp = int(row['followers_history'].keys()[-1])
+				last_updated = datetime.datetime.fromtimestamp(last_updated_stamp)
+				staleness = datetime.datetime.utcnow() - last_updated
+				if staleness.total_seconds() < STALE_AGE:
+					logger.info("Skipping user %s - last updated %s ago (not stale enough yet)" % (id, staleness))
+					return row['followers']
 		
 		# Make the actual API requests
 		followers = self.tl.get_followers(user_id=id)

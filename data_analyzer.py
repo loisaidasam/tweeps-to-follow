@@ -5,6 +5,7 @@ import operator
 
 from jinja2 import Template
 
+from data_collector import DataCollector
 from emaillib import send_email
 from models import TweepModel
 import settings
@@ -104,6 +105,7 @@ class DataAnalyzer(object):
 		}
 		template_text = open('templates/who_to_follow_email.txt', 'r').read()
 		email_txt = Template(template_text).render(**context).encode('utf-8')
+		logger.debug("plain text mail:\n%s" % email_txt)
 		
 		send_email(settings.EMAIL_FROM, settings.EMAIL_TO, subject, email_txt)
 
