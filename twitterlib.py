@@ -87,25 +87,24 @@ class TwitterLib(object):
 	def get_user_info(self, user_ids):
 		user_ids_str = ",".join(map(str, user_ids))
 		return self._rate_limited_api_request(self.client.lookupUser, user_id=user_ids_str)
-		
 	
-	def get_followers(self, user_id=None, screen_name=None):
-		if (user_id is None and screen_name is None) or (user_id is not None and screen_name is not None):
+	
+	def _get_friends_or_followers_helper(self, method, user_id=None, screen_name=None):
+		if user_id:
+			params['user_id'] = user_id
+		elif screen_name:
+			params['screen_name'] = screen_name
+		else:
 			raise TwitterLibException("Pass either a user_id OR a screen_name dep!")
 		
 		# TODO: use cursor, via https://dev.twitter.com/docs/misc/cursoring
 		params = {'cursor': -1}
 		
-		if user_id:
-			params['user_id'] = user_id
-		elif screen_name:
-			params['screen_name'] = screen_name
-		
 		retries = 0
 		e = None
 		while retries < NUM_RETRIES:
 			try:
-				result = self._rate_limited_api_request(self.client.getFollowersIDs, **params)
+				result = self._rate_limited_api_request(method, **params)
 				return result['ids']
 			except Exception, e:
 				logger.error("Exception in get_followers on try #%s: %s" % (retries, e))
@@ -115,6 +114,14 @@ class TwitterLib(object):
 		if e is not None:
 			raise e
 		return []
+	
+	
+	def get_followers(self, user_id=None, screen_name=None):
+		return self._get_friends_or_followers_helper(self.client.getFollowersIDs, user_id, screen_name)
+	
+	
+	def get_following(self, user_id=None, screen_name=None):
+		return self._get_friends_or_followers_helper(self.client.getFriendsIDs, user_id, screen_name)
 
 
 def main():

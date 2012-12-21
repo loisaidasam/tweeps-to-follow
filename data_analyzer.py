@@ -1,11 +1,12 @@
 
 import datetime
+import math
 import operator
 
 from jinja2 import Template
 
 from emaillib import send_email
-from models import FollowerModel
+from models import TweepModel
 import settings
 from twitterlib import TwitterLib
 
@@ -21,30 +22,50 @@ logger = settings.get_logger(__name__)
 
 class DataAnalyzer(object):	
 	def __init__(self):
-		self.fm = FollowerModel()
+		self.tm = TweepModel()
 		self.tl = TwitterLib()
+	
 	
 	def analyze_data(self):
 		logger.info("Analyzing tweeps...")
 		
-		# First find all my followers...
-		my_followers = []
-		all_tweeps = self.fm.fetch_all()
-		for tweep in all_tweeps:
-			if tweep['level'] == 0:
-				my_followers.append(tweep['id'])
-		
-		# Now calculate everyone else's scores...
+		# Let's calculate us some scores!
 		tweep_scores = {}
-		all_tweeps = self.fm.fetch_all()
+		tweep_data = {}
+		all_tweeps = self.tm.fetch_all()
 		for tweep in all_tweeps:
-			if tweep['level'] == 0 or tweep['id'] in my_followers:
+			# Ignore people who already follow us
+			if tweep['level'] == 0:
 				continue
+			
+			# For everyone else, add some juice
 			if tweep['id'] not in tweep_scores:
 				tweep_scores[tweep['id']] = 0
 			tweep_scores[tweep['id']] += pow(DEPRECIATION_PER_LEVEL, tweep['level']-1)
+			
+			# Get a ratio to be applied later
+			if tweep['id'] not in tweep_data:
+				tweep_data[tweep['id']] = {
+					'followers': tweep['followers'],
+					'following': tweep['following'],
+				}
 		
-		logger.info("Finished analyzing tweeps, now sorting them...")
+		logger.info("Applying some heuristics...")
+		
+		# Now penalize scores based on: 
+		# 	1. followers/following ratio
+		# 	2. total people following
+		for id, score in tweep_scores.iteritems():
+			# TODO: is this right?
+			penalize_effect_1 = 1.0 * tweep_data['followers'] / tweep_data['following']
+			tweep_scores[id] *= penalize_effect_1
+			
+			# TODO: is this right?
+			if tweep_data['following'] >= 10:
+				penalize_effect_2 = math.log(tweep_data['following'], 10)
+				tweep_scores[id] /= penalize_effect_2
+		
+		logger.info("Sorting...")
 		sorted_tweeps = sorted(tweep_scores.iteritems(), key=operator.itemgetter(1))
 		
 		self.recommended_tweeps = []

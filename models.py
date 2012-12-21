@@ -12,10 +12,10 @@ connection = Connection(settings.MONGO_HOST, settings.MONGO_PORT)
 db = connection.tweeps
 
 
-class FollowerModel(Model):
+class TweepModel(Model):
 	'''
 	Usage examples:
-	>>> f = FollowerModel()
+	>>> f = TweepModel()
 	
 	>>> print f.create_or_update(foo='bar', id=12)
 	{'foo': 'bar', 'id': 12, '_id': ObjectId('5068bea1af9e0e183148fa15')}
@@ -27,23 +27,28 @@ class FollowerModel(Model):
 	None
 	'''
 	
-	model = db.followers_collection
+	model = db.tweep_collection
 	
 	def fetch_one(self, id):
-		return super(FollowerModel, self).fetch_one({"id": id})
+		return super(TweepModel, self).fetch_one({"id": id})
 
 
-	def save_followers(self, id, level, followers, timestamp=None):
+	def save_tweep(self, id, level, followers, following, timestamp=None):
 		row = self.fetch_one(id) or {}
 		row['id'] = id
 		row['level'] = min(row.get('level', sys.maxint), level)
-		row['followers'] = followers
-		if 'followers_history' not in row:
-			row['followers_history'] = []
-		if 'followers_history_dates' not in row:
-			row['followers_history_dates'] = []
-		row['followers_history'].append(followers)
+		
 		if timestamp is None:
 			timestamp = datetime.datetime.utcnow()
-		row['followers_history_dates'].append(timestamp)
+		
+		row['followers'] = followers
+		if 'followers_history' not in row:
+			row['followers_history'] = {}
+		row['followers_history'][timestamp] = followers
+		
+		row['following'] = following
+		if 'following_history' not in row:
+			row['following_history'] = {}
+		row['following_history'][timestamp] = following
+		
 		return self.create_or_update(**row)
