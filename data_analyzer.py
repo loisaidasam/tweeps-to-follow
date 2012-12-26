@@ -61,14 +61,15 @@ class DataAnalyzer(object):
 			
 			logger.debug("OriginalScore=%s" % score)
 			# TODO: is this right?
-			penalize_effect_1 = 1.0 * data['following_count'] / data['followers_count']
-			tweep_scores[id] *= penalize_effect_1
-			logger.debug("Following=%s Followers=%s PenalizeEffect1=%s NewScore=%s" % (
-				data['following_count'],
-				data['followers_count'],
-				penalize_effect_1,
-				tweep_scores[id],
-			))
+			if data['followers_count']:
+				penalize_effect_1 = 1.0 * data['following_count'] / data['followers_count']
+				tweep_scores[id] *= penalize_effect_1
+				logger.debug("Following=%s Followers=%s PenalizeEffect1=%s NewScore=%s" % (
+					data['following_count'],
+					data['followers_count'],
+					penalize_effect_1,
+					tweep_scores[id],
+				))
 			
 			# TODO: is this right?
 			if data['following_count'] >= 10:
@@ -80,7 +81,7 @@ class DataAnalyzer(object):
 				))
 		
 		logger.info("Sorting...")
-		sorted_tweeps = sorted(tweep_scores.iteritems(), key=operator.itemgetter(1))
+		sorted_tweeps = sorted(tweep_scores.iteritems(), key=operator.itemgetter(1), reverse=True)
 		
 		self.recommended_tweeps = []
 		tweep_ids = [x[0] for x in sorted_tweeps[:NUM_OF_RECOMMENDED_TWEEPS]]
