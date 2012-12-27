@@ -60,23 +60,26 @@ class DataAnalyzer(object):
 			data = tweep_data[id]
 			
 			logger.debug("OriginalScore=%s" % score)
-			# TODO: is this right?
 			if data['followers_count']:
-				penalize_effect_1 = 1.0 * data['following_count'] / data['followers_count']
-				tweep_scores[id] *= penalize_effect_1
-				logger.debug("Following=%s Followers=%s PenalizeEffect1=%s NewScore=%s" % (
+				boost_effect = 1.0 * data['following_count'] / data['followers_count']
+				if boost_effect < 10:
+					boost_effect = 10
+				
+				# Taking the log because we actually want to minimize this boost factor
+				boost_effect = math.log(boost_effect, 10)
+				tweep_scores[id] *= boost_effect
+				logger.debug("Following=%s Followers=%s BoostEffect=%s NewScore=%s" % (
 					data['following_count'],
 					data['followers_count'],
-					penalize_effect_1,
+					boost_effect,
 					tweep_scores[id],
 				))
 			
-			# TODO: is this right?
 			if data['following_count'] >= 10:
-				penalize_effect_2 = math.log(data['following_count'], 10)
-				tweep_scores[id] /= penalize_effect_2
-				logger.debug("PenalizeEffect2=%s NewScore=%s" % (
-					penalize_effect_2,
+				penalize_effect = math.log(data['following_count'], 10)
+				tweep_scores[id] /= penalize_effect
+				logger.debug("PenalizeEffect=%s NewScore=%s" % (
+					penalize_effect,
 					tweep_scores[id],
 				))
 		
