@@ -49,12 +49,16 @@ class TwitterLib(object):
 			reset_time = rate_limit_ish['reset_time_in_seconds']
 			time_now = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
 			sleeptime = reset_time - time_now + 60
+			if sleeptime < 0:
+				sleeptime = 60
 			logger.info("%s requests left. Sleeping for %s seconds..." % (self.requests_left, sleeptime))
+			logger.info("Now let's see if we're back...")
 			time.sleep(sleeptime)
-			logger.info("And we're back!")
 			while self.requests_left <= 0:
-				self._check_and_reset_rate_limits()
+				logger.info("Not back yet, we'll try again in 10 seconds...")
 				time.sleep(10)
+				self._check_and_reset_rate_limits()
+			logger.info("And we're back!")
 		
 		try:
 			result = twitter_func(*args, **kwargs)
