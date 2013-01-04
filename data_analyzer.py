@@ -30,11 +30,19 @@ class DataAnalyzer(object):
 	def analyze_data(self):
 		logger.info("Analyzing tweeps...")
 		
+		# First let's grab all of the people that we already follow
+		# (because we don't want to recommend them, duh)
+		following = self.tl.get_following(user_id=settings.TWITTER_ID)
+		
 		# Let's calculate us some scores!
 		tweep_scores = {}
 		tweep_data = {}
 		all_tweeps = self.tm.fetch_all()
 		for tweep in all_tweeps:
+			# Ignore people who we already follow
+			if tweep['id'] in following:
+				continue
+			
 			# Ignore people who already follow us
 			if tweep['level'] == 0:
 				continue
