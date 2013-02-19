@@ -5,17 +5,6 @@ import logging
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 
-TWITTER_ID = 15851927
-TWITTER_SCREEN_NAME = 'loisaidasam'
-
-TWITTER_CONSUMER_KEY = ""
-TWITTER_CONSUMER_SECRET = ""
-TWITTER_OAUTH_TOKEN = ""
-TWITTER_OAUTH_TOKEN_SECRET = ""
-
-EMAIL_FROM = "sender@example.com"
-EMAIL_TO = "receiver@example.com"
-
 # Logging stuff
 def get_logger(name, logger_level=logging.DEBUG):
 	logger = logging.getLogger(name)

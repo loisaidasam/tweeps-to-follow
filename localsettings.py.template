@@ -1,0 +1,15 @@
+
+EMAIL_FROM = "sender@example.com"
+EMAIL_TO = "receiver@example.com"
+
+# Twitter id/handle you want data about
+TWITTER_ID = 15851927
+TWITTER_SCREEN_NAME = 'loisaidasam'
+
+# Twitter oauth credentials
+# (get them here: https://dev.twitter.com/apps)
+TWITTER_CONSUMER_KEY = ""
+TWITTER_CONSUMER_SECRET = ""
+TWITTER_OAUTH_TOKEN = ''
+TWITTER_OAUTH_TOKEN_SECRET = ''
+
